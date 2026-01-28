@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Multi-Marketplace Sales Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #1a1a2e;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            padding: 30px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="2" height="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            opacity: 0.95;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .width-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .width-control label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .width-control input[type="range"] {
+            width: 120px;
+        }
+
+        .width-value {
+            font-size: 11px;
+            color: #666;
+            min-width: 40px;
+        }
+
+        .btn {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .btn:hover {
+            background: #F7931E;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #764ba2;
+        }
+
+        .btn-share {
+            background: #28a745;
+        }
+
+        .btn-share:hover {
+            background: #218838;
+        }
+
+        .status {
+            margin-left: auto;
+            padding: 8px 16px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .share-section {
+            padding: 20px 40px;
+            background: #fff3cd;
+            border-bottom: 2px solid #ffc107;
+            display: none;
+        }
+
+        .share-section.active {
+            display: block;
+        }
+
+        .share-code {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 11px;
+            border: 2px solid #ffc107;
+        }
+
+        .import-section {
+            margin-top: 15px;
+        }
+
+        .import-section textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            resize: vertical;
+        }
+
+        .table-container {
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .marketplace-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            cursor: move;
+            user-select: none;
+            position: relative;
+        }
+
+        .marketplace-header:hover {
+            background: linear-gradient(135deg, #F7931E 0%, #FF6B35 100%);
+        }
+
+        .marketplace-header.dragging {
+            opacity: 0.5;
+        }
+
+        .marketplace-header.drag-over {
+            border-left: 4px solid #FFD700;
+        }
+
+        .drag-handle {
+            display: inline-block;
+            margin-right: 6px;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        td:first-child {
+            font-weight: 600;
+            background: #f8f9fa;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        tr:hover td {
+            background: #f0f7ff;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            min-width: 60px;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #FF6B35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .total-cell {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            font-weight: 700;
+            color: #155724;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6B35;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            .table-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Amazon Sales Tracker</h1>
+            <p>Multi-Marketplace Daily Sales | UK • DE • FR • IT</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="saveData()">💾 Save Local</button>
+            <button class="btn btn-share" onclick="toggleShareSection()">👥 Share Data</button>
+            <button class="btn btn-secondary" onclick="addMarketplace()">➕ Add Marketplace</button>
+            <button class="btn btn-secondary" onclick="exportToExcel()">📊 Export Excel</button>
+            <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
+            
+            <div class="width-control">
+                <label>Column Width:</label>
+                <input type="range" min="80" max="200" value="120" id="columnWidth" oninput="adjustColumnWidth(this.value)">
+                <span class="width-value" id="widthValue">120px</span>
+            </div>
+            
+            <div class="status" id="status">Ready</div>
+        </div>
+
+        <div class="share-section" id="shareSection">
+            <h3 style="margin-bottom: 10px; color: #856404;">📤 Share Your Data</h3>
+            <p style="margin-bottom: 10px; font-size: 13px;">Copy this code and send to others:</p>
+            <div class="share-code" id="shareCode">Click "Generate Share Code" button below</div>
+            <button class="btn btn-share" style="margin-top: 10px;" onclick="generateShareCode()">Generate Share Code</button>
+            <button class="btn" style="margin-top: 10px; margin-left: 10px;" onclick="copyShareCode()">📋 Copy Code</button>
+            
+            <div class="import-section">
+                <h3 style="margin-bottom: 10px; color: #856404;">📥 Import Data from Others</h3>
+                <p style="margin-bottom: 10px; font-size: 13px;">Paste the share code you received:</p>
+                <textarea id="importCode" placeholder="Paste share code here..."></textarea>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="importData()">Import Data</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="loading" class="loading">
+                <div class="loader"></div>
+                <div>Loading your data...</div>
+            </div>
+            <table id="salesTable" style="display: none;"></table>
+        </div>
+    </div>
+
+    <script>
+        const defaultMarketplaces = ['UK', 'DE', 'FR', 'IT'];
+        const daysToShow = 30;
+        let salesData = {};
+        let customDates = [];
+        let marketplaces = [...defaultMarketplaces];
+        let columnWidth = 120;
+
+        function toggleShareSection() {
+            const section = document.getElementById('shareSection');
+            section.classList.toggle('active');
+        }
+
+        function generateShareCode() {
+            const dataToShare = {
+                salesData: salesData,
+                customDates: customDates,
+                marketplaces: marketplaces,
+                columnWidth: columnWidth,
+                sharedAt: new Date().toISOString()
+            };
+            const encoded = btoa(JSON.stringify(dataToShare));
+            document.getElementById('shareCode').textContent = encoded;
+            updateStatus('Share code generated!', '#28a745');
+        }
+
+        function copyShareCode() {
+            const code = document.getElementById('shareCode').textContent;
+            if (code === 'Click "Generate Share Code" button below') {
+                alert('Please generate a share code first!');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                updateStatus('Copied to clipboard!', '#28a745');
+            }).catch(() => {
+                alert('Copy this code manually:\n\n' + code);
+            });
+        }
+
+        function importData() {
+            const code = document.getElementById('importCode').value.trim();
+            if (!code) {
+                alert('Please paste a share code first!');
+                return;
+            }
+            
+            try {
+                const decoded = JSON.parse(atob(code));
+                salesData = decoded.salesData || {};
+                customDates = decoded.customDates || [];
+                marketplaces = decoded.marketplaces || [...defaultMarketplaces];
+                columnWidth = decoded.columnWidth || 120;
+                
+                renderTable();
+                saveData();
+                updateStatus('Data imported successfully!', '#28a745');
+                document.getElementById('importCode').value = '';
+                
+                setTimeout(() => {
+                    toggleShareSection();
+                }, 2000);
+            } catch (error) {
+                alert('Invalid share code! Please check and try again.');
+                console.error('Import error:', error);
+            }
+        }
+
+        function adjustColumnWidth(width) {
+            columnWidth = parseInt(width);
+            document.getElementById('widthValue').textContent = width + 'px';
+            
+            const cells = document.querySelectorAll('td:not(:first-child)');
+            cells.forEach(cell => {
+                cell.style.minWidth = width + 'px';
+                cell.style.maxWidth = width + 'px';
+            });
+            
+            const headers = document.querySelectorAll('th:not(:first-child)');
+            headers.forEach(header => {
+                header.style.minWidth = width + 'px';
+                header.style.maxWidth = width + 'px';
+            });
+        }
+
+        function getDates() {
+            if (customDates.length > 0) {
+                return customDates;
+            }
+            const dates = [];
+            const startDate = new Date('2025-01-01');
+            for (let i = 0; i < daysToShow; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                dates.push(date.toISOString().split('T')[0]);
+            }
+            customDates = [...dates];
+            return dates;
+        }
+
+        function updateDate(index, newDate) {
+            const oldDate = customDates[index];
+            customDates[index] = newDate;
+            
+            marketplaces.forEach(mp => {
+                const oldKey = `${oldDate}-${mp}`;
+                const newKey = `${newDate}-${mp}`;
+                if (salesData[oldKey]) {
+                    salesData[newKey] = salesData[oldKey];
+                    delete salesData[oldKey];
+                }
+            });
+            
+            renderTable();
+        }
+
+        function addMarketplace() {
+            const name = prompt('Enter marketplace code (e.g., US, ES, JP):');
+            if (name && name.trim()) {
+                const mpCode = name.trim().toUpperCase();
+                if (!marketplaces.includes(mpCode)) {
+                    marketplaces.push(mpCode);
+                    renderTable();
+                    saveData();
+                } else {
+                    alert('Marketplace already exists!');
+                }
+            }
+        }
+
+        function removeMarketplace(mp) {
+            if (confirm(`Remove ${mp} marketplace? All data will be deleted.`)) {
+                marketplaces = marketplaces.filter(m => m !== mp);
+                Object.keys(salesData).forEach(key => {
+                    if (key.endsWith(`-${mp}`)) {
+                        delete salesData[key];
+                    }
+                });
+                renderTable();
+                saveData();
+            }
+        }
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('amazon-sales-data');
+                if (saved) {
+                    const loaded = JSON.parse(saved);
+                    salesData = loaded.salesData || {};
+                    customDates = loaded.customDates || [];
+                    marketplaces = loaded.marketplaces || [...defaultMarketplaces];
+                    columnWidth = loaded.columnWidth || 120;
+                }
+            } catch (error) {
+                console.log('Load error:', error);
+            }
+            renderTable();
+        }
+
+        function saveData() {
+            try {
+                updateStatus('Saving...', '#ffc107');
+                const dataToSave = {
+                    salesData: salesData,
+                    customDates: customDates,
+                    marketplaces: marketplaces,
+                    columnWidth: columnWidth
+                };
+                localStorage.setItem('amazon-sales-data', JSON.stringify(dataToSave));
+                updateStatus('✓ Saved!', '#28a745');
+                setTimeout(() => updateStatus('Ready', '#28a745'), 2000);
+            } catch (error) {
+                updateStatus('Save Error', '#dc3545');
+                console.error('Save error:', error);
+            }
+        }
+
+        function updateStatus(message, color) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.style.background = color === '#28a745' ? '#d4edda' : 
+                                     color === '#ffc107' ? '#fff3cd' : '#f8d7da';
+            status.style.color = color === '#28a745' ? '#155724' : 
+                                color === '#ffc107' ? '#856404' : '#721c24';
+        }
+
+        function renderTable() {
+            const dates = getDates();
+            const table = document.getElementById('salesTable');
+            
+            let html = '<thead><tr><th>Date</th>';
+            
+            marketplaces.forEach((mp, mpIndex) => {
+                html += `<th colspan="2" class="marketplace-header" draggable="true" data-mp-index="${mpIndex}" data-mp="${mp}">
+                    <span class="drag-handle">⋮⋮</span>${mp} 
+                    <button onclick="removeMarketplace('${mp}')" style="margin-left: 8px; background: rgba(255,255,255,0.3); border: none; color: white; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✕</button>
+                </th>`;
+            });
+            html += '</tr><tr><th></th>';
+            
+            marketplaces.forEach((mp, idx) => {
+                const currency = mp === 'UK' ? '£' : mp === 'US' ? '$' : '€';
+                html += `<th>Orders</th><th>Sales (${currency})</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            dates.forEach((date, idx) => {
+                html += `<tr><td><input type="date" value="${date}" 
+                    style="width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;"
+                    onchange="updateDate(${idx}, this.value)"></td>`;
+                
+                marketplaces.forEach(mp => {
+                    const key = `${date}-${mp}`;
+                    const orders = salesData[key]?.orders || 0;
+                    const sales = salesData[key]?.sales || 0;
+                    
+                    html += `
+                        <td><input type="number" min="0" value="${orders}" 
+                            onchange="updateValue('${date}', '${mp}', 'orders', this.value)"></td>
+                        <td><input type="number" min="0" value="${sales}" 
+                            onchange="updateValue('${date}', '${mp}', 'sales', this.value)"></td>
+                    `;
+                });
+                
+                html += '</tr>';
+            });
+            
+            html += '<tr><td class="total-cell">TOTAL</td>';
+            marketplaces.forEach(mp => {
+                const totals = calculateTotals(mp, dates);
+                html += `
+                    <td class="total-cell">${totals.orders.toLocaleString()}</td>
+                    <td class="total-cell">${totals.sales.toLocaleString()}</td>
+                `;
+            });
+            html += '</tr></tbody>';
+            
+            table.innerHTML = html;
+            table.style.display = 'table';
+            document.getElementById('loading').style.display = 'none';
+            table.classList.add('fade-in');
+            
+            adjustColumnWidth(columnWidth);
+            setupDragAndDrop();
+        }
+
+        function setupDragAndDrop() {
+            const headers = document.querySelectorAll('.marketplace-header');
+            let draggedElement = null;
+            let draggedIndex = null;
+
+            headers.forEach(header => {
+                header.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    draggedIndex = parseInt(this.getAttribute('data-mp-index'));
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                header.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    headers.forEach(h => h.classList.remove('drag-over'));
+                });
+
+                header.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    return false;
+                });
+
+                header.addEventListener('dragenter', function(e) {
+                    if (this !== draggedElement) {
+                        this.classList.add('drag-over');
+                    }
+                });
+
+                header.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+
+                header.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (draggedElement !== this) {
+                        const dropIndex = parseInt(this.getAttribute('data-mp-index'));
+                        
+                        const draggedMP = marketplaces[draggedIndex];
+                        marketplaces.splice(draggedIndex, 1);
+                        marketplaces.splice(dropIndex, 0, draggedMP);
+                        
+                        renderTable();
+                        saveData();
+                    }
+                    
+                    this.classList.remove('drag-over');
+                    return false;
+                });
+            });
+        }
+
+        function updateValue(date, marketplace, field, value) {
+            const key = `${date}-${marketplace}`;
+            if (!salesData[key]) {
+                salesData[key] = { orders: 0, sales: 0 };
+            }
+            salesData[key][field] = parseFloat(value) || 0;
+            renderTable();
+        }
+
+        function calculateTotals(marketplace, dates) {
+            let orders = 0, sales = 0;
+            dates.forEach(date => {
+                const key = `${date}-${marketplace}`;
+                if (salesData[key]) {
+                    orders += salesData[key].orders || 0;
+                    sales += salesData[key].sales || 0;
+                }
+            });
+            return { orders, sales };
+        }
+
+        function exportToExcel() {
+            updateStatus('Preparing export...', '#ffc107');
+            
+            const dates = getDates();
+            let csv = 'Date,' + marketplaces.map(mp => {
+                const currency = mp === 'UK' ? '£' : mp === 'US' ? '$' : '€';
+                return `${mp} Orders,${mp} Sales (${currency})`;
+            }).join(',') + '\n';
+            
+            dates.forEach(date => {
+                let row = date;
+                marketplaces.forEach(mp => {
+                    const key = `${date}-${mp}`;
+                    const orders = salesData[key]?.orders || 0;
+                    const sales = salesData[key]?.sales || 0;
+                    row += `,${orders},${sales}`;
+                });
+                csv += row + '\n';
+            });
+            
+            let totalRow = 'TOTAL';
+            marketplaces.forEach(mp => {
+                const totals = calculateTotals(mp, dates);
+                totalRow += `,${totals.orders},${totals.sales}`;
+            });
+            csv += totalRow;
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Amazon_Sales_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            updateStatus('✓ Exported!', '#28a745');
+            setTimeout(() => updateStatus('Ready', '#28a745'), 2000);
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                salesData = {};
+                customDates = [];
+                marketplaces = [...defaultMarketplaces];
+                localStorage.removeItem('amazon-sales-data');
+                renderTable();
+                updateStatus('✓ Cleared!', '#28a745');
+                setTimeout(() => updateStatus('Ready', '#28a745'), 2000);
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
